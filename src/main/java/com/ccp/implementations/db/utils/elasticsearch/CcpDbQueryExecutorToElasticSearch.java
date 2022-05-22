@@ -14,6 +14,7 @@ import com.ccp.dependency.injection.CcpImplementation;
 import com.ccp.especifications.db.query.CcpDbQueryExecutor;
 import com.ccp.especifications.db.query.ElasticQuery;
 import com.ccp.especifications.db.utils.CcpDbUtils;
+import com.ccp.especifications.http.CcpHttpResponseType;
 
 @CcpImplementation
 public class CcpDbQueryExecutorToElasticSearch implements CcpDbQueryExecutor {
@@ -42,14 +43,14 @@ public class CcpDbQueryExecutorToElasticSearch implements CcpDbQueryExecutor {
 	}
 	@Override
 	public CcpMapDecorator delete(ElasticQuery elasticQuery, String[] resourcesNames) {
-		CcpMapDecorator executeHttpRequest = this.dbUtils.executeHttpRequest("/_delete_by_query", "POST", 200, elasticQuery.values,  resourcesNames);
+		CcpMapDecorator executeHttpRequest = this.dbUtils.executeHttpRequest("/_delete_by_query", "POST", 200, elasticQuery.values,  resourcesNames, CcpHttpResponseType.singleRecord);
 
 		return executeHttpRequest;
 	}
 
 	@Override
 	public CcpMapDecorator update(ElasticQuery elasticQuery, String[] resourcesNames, CcpMapDecorator newValues) {
-		CcpMapDecorator executeHttpRequest = this.dbUtils.executeHttpRequest("/_update_by_query", "POST", 200, elasticQuery.values,  resourcesNames);
+		CcpMapDecorator executeHttpRequest = this.dbUtils.executeHttpRequest("/_update_by_query", "POST", 200, elasticQuery.values,  resourcesNames, CcpHttpResponseType.singleRecord);
 		
 		return executeHttpRequest;
 	}
@@ -76,26 +77,23 @@ public class CcpDbQueryExecutorToElasticSearch implements CcpDbQueryExecutor {
 			
 			CcpMapDecorator flows = new CcpMapDecorator().put("200", CcpConstants.doNothing).put("404", CcpConstants.returnEmpty);
 			CcpMapDecorator scrollRequest = new CcpMapDecorator().put("scroll", scrollTime).put("scroll_id", scrollId);
-			CcpMapDecorator executeHttpRequest = this.dbUtils.executeHttpRequest("/_search/scroll", "POST", flows,  scrollRequest);
-			CcpMapDecorator execute = this.searchDataTransform.execute(executeHttpRequest);
-			List<CcpMapDecorator> hits = execute.getAsMapList("response");
+			CcpMapDecorator executeHttpRequest = this.dbUtils.executeHttpRequest("/_search/scroll", "POST", flows,  scrollRequest, CcpHttpResponseType.singleRecord);
+			List<CcpMapDecorator> hits = this.searchDataTransform.transform(executeHttpRequest);
 			consumer.accept(hits);
 		}
 	}
 
 	@Override
 	public long total(ElasticQuery elasticQuery, String[] resourcesNames) {
-		CcpMapDecorator executeHttpRequest = this.dbUtils.executeHttpRequest("/_count", "GET", 200, elasticQuery.values);
-		CcpMapDecorator response = executeHttpRequest.getInternalMap("response");
-		Long count = response.getAsLongNumber("count");
+		CcpMapDecorator executeHttpRequest = this.dbUtils.executeHttpRequest("/_count", "GET", 200, elasticQuery.values, CcpHttpResponseType.singleRecord);
+		Long count = executeHttpRequest.getAsLongNumber("count");
 		return count;
 	}
 
 	@Override
 	public List<CcpMapDecorator> getResultAsList(ElasticQuery elasticQuery, String[] resourcesNames, String... fieldsToSearch) {
 		CcpMapDecorator executeHttpRequest = this.getResultAsPackage("/_search", "POST", 200, elasticQuery, resourcesNames, fieldsToSearch);
-		CcpMapDecorator execute = this.searchDataTransform.execute(executeHttpRequest);
-		List<CcpMapDecorator> hits = execute.getAsMapList("response");
+		List<CcpMapDecorator> hits = this.searchDataTransform.transform(executeHttpRequest);
 		return hits;
 	}
 
@@ -114,7 +112,7 @@ public class CcpDbQueryExecutorToElasticSearch implements CcpDbQueryExecutor {
 	@Override
 	public CcpMapDecorator getResultAsPackage(String url, String method, int expectedStatus, ElasticQuery elasticQuery, String[] resourcesNames, String... fieldsToSearch) {
 		CcpMapDecorator _source = elasticQuery.values.put("_source", Arrays.asList(fieldsToSearch));
-		CcpMapDecorator executeHttpRequest = this.dbUtils.executeHttpRequest(url, method, expectedStatus,  _source, resourcesNames);
+		CcpMapDecorator executeHttpRequest = this.dbUtils.executeHttpRequest(url, method, expectedStatus,  _source, resourcesNames, CcpHttpResponseType.singleRecord);
 		return executeHttpRequest;
 	}
 

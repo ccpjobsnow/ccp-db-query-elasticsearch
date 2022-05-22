@@ -4,16 +4,16 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import com.ccp.decorators.CcpMapDecorator;
+import com.ccp.process.CcpMapTransform;
 import com.ccp.process.CcpProcess;
 
-class CcpResponseHandlerToSearch implements CcpProcess{
+class CcpResponseHandlerToSearch implements CcpMapTransform<List<CcpMapDecorator>>{
 	private CcpSourceHandler handler = new CcpSourceHandler();
 	@Override
-	public CcpMapDecorator execute(CcpMapDecorator values) {
-		CcpMapDecorator response = values.getInternalMap("response");
-		List<CcpMapDecorator> hits = response.getInternalMap("hits").getAsMapList("hits");
+	public List<CcpMapDecorator> transform(CcpMapDecorator values) {
+		List<CcpMapDecorator> hits = values.getInternalMap("hits").getAsMapList("hits");
 		List<CcpMapDecorator> collect = hits.stream().map(x -> this.handler.execute(x)).collect(Collectors.toList());
-		return new CcpMapDecorator().put("response", collect);
+		return collect;
 	}
 
 }

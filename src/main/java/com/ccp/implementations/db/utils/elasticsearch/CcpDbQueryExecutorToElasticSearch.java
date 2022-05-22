@@ -3,7 +3,7 @@ package com.ccp.implementations.db.utils.elasticsearch;
 import java.util.List;
 import java.util.function.Consumer;
 
-import com.ccp.constantes.CcpConstantes;
+import com.ccp.constantes.CcpConstants;
 import com.ccp.decorators.CcpMapDecorator;
 import com.ccp.dependency.injection.CcpEspecification;
 import com.ccp.dependency.injection.CcpImplementation;
@@ -70,7 +70,7 @@ public class CcpDbQueryExecutorToElasticSearch implements CcpDbQueryExecutor {
 				continue;
 			}
 			
-			CcpMapDecorator flows = new CcpMapDecorator().put("200", CcpConstantes.doNothing).put("404", CcpConstantes.returnEmpty);
+			CcpMapDecorator flows = new CcpMapDecorator().put("200", CcpConstants.doNothing).put("404", CcpConstants.returnEmpty);
 			CcpMapDecorator scrollRequest = new CcpMapDecorator().put("scroll", scrollTime).put("scroll_id", scrollId);
 			CcpMapDecorator executeHttpRequest = this.dbUtils.executeHttpRequest(flows, "/_search/scroll", "POST", scrollRequest);
 			CcpMapDecorator execute = this.handler.execute(executeHttpRequest);

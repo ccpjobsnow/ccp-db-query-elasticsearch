@@ -77,7 +77,9 @@ public class CcpDbQueryExecutorToElasticSearch implements CcpDbQueryExecutor {
 		
 		for(int k = 0; k <= total; k += size) {
 			
-			if(k == 0) {
+			boolean primeiraPagina = k == 0;
+			
+			if(primeiraPagina) {
 				CcpMapDecorator resultAsPackage = elasticQuery.setScrollTime(scrollTime).selectFrom(requestExecutor, resourcesNames).getResultAsPackage(fields);
 				List<CcpMapDecorator> hits = resultAsPackage.getAsMapList("hits");
 				scrollId = resultAsPackage.getAsString("scrollId");

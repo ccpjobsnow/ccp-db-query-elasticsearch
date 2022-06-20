@@ -7,7 +7,7 @@ import com.ccp.decorators.CcpMapDecorator;
 import com.ccp.process.CcpMapTransform;
 import com.ccp.process.CcpProcess;
 
-class CcpResponseHandlerToSearch implements CcpMapTransform<List<CcpMapDecorator>>{
+class ResponseHandlerToSearch implements CcpMapTransform<List<CcpMapDecorator>>{
 	private CcpSourceHandler handler = new CcpSourceHandler();
 	@Override
 	public List<CcpMapDecorator> transform(CcpMapDecorator values) {

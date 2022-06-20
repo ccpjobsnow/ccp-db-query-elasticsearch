@@ -10,19 +10,17 @@ import java.util.stream.Collectors;
 import com.ccp.constantes.CcpConstants;
 import com.ccp.decorators.CcpMapDecorator;
 import com.ccp.dependency.injection.CcpEspecification;
-import com.ccp.dependency.injection.CcpImplementation;
 import com.ccp.especifications.db.query.CcpDbQueryExecutor;
 import com.ccp.especifications.db.query.ElasticQuery;
 import com.ccp.especifications.db.utils.CcpDbUtils;
 import com.ccp.especifications.http.CcpHttpResponseType;
 
-@CcpImplementation
-public class CcpDbQueryExecutorToElasticSearch implements CcpDbQueryExecutor {
+class DbQueryExecutorToElasticSearch implements CcpDbQueryExecutor {
 	
 	@CcpEspecification
 	private CcpDbUtils dbUtils;
 	
-	private final CcpResponseHandlerToSearch searchDataTransform = new CcpResponseHandlerToSearch();
+	private final ResponseHandlerToSearch searchDataTransform = new ResponseHandlerToSearch();
 
 	@Override
 	public CcpMapDecorator getTermsStatis(ElasticQuery elasticQuery, String[] resourcesNames, String fieldName) {

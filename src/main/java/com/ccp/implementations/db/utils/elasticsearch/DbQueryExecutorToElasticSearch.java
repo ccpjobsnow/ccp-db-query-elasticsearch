@@ -9,7 +9,7 @@ import java.util.stream.Collectors;
 
 import com.ccp.constantes.CcpConstants;
 import com.ccp.decorators.CcpMapDecorator;
-import com.ccp.dependency.injection.CcpEspecification;
+import com.ccp.dependency.injection.CcpSpecification;
 import com.ccp.especifications.db.query.CcpDbQueryExecutor;
 import com.ccp.especifications.db.query.ElasticQuery;
 import com.ccp.especifications.db.utils.CcpDbUtils;
@@ -17,7 +17,7 @@ import com.ccp.especifications.http.CcpHttpResponseType;
 
 class DbQueryExecutorToElasticSearch implements CcpDbQueryExecutor {
 	
-	@CcpEspecification
+	@CcpSpecification
 	private CcpDbUtils dbUtils;
 	
 	private final ResponseHandlerToSearch searchDataTransform = new ResponseHandlerToSearch();
@@ -73,7 +73,7 @@ class DbQueryExecutorToElasticSearch implements CcpDbQueryExecutor {
 				continue;
 			}
 			
-			CcpMapDecorator flows = new CcpMapDecorator().put("200", CcpConstants.doNothing).put("404", CcpConstants.returnEmpty);
+			CcpMapDecorator flows = new CcpMapDecorator().put("200", CcpConstants.DO_NOTHING).put("404", CcpConstants.RETURNS_EMPTY_JSON);
 			CcpMapDecorator scrollRequest = new CcpMapDecorator().put("scroll", scrollTime).put("scroll_id", scrollId);
 			CcpMapDecorator executeHttpRequest = this.dbUtils.executeHttpRequest("/_search/scroll", "POST", flows,  scrollRequest, CcpHttpResponseType.singleRecord);
 			List<CcpMapDecorator> hits = this.searchDataTransform.transform(executeHttpRequest);

@@ -9,7 +9,7 @@ import java.util.stream.Collectors;
 
 import com.ccp.constantes.CcpConstants;
 import com.ccp.decorators.CcpMapDecorator;
-import com.ccp.dependency.injection.CcpDependencyInject;
+import com.ccp.dependency.injection.CcpInstanceInjection;
 import com.ccp.especifications.db.query.CcpDbQueryExecutor;
 import com.ccp.especifications.db.query.ElasticQuery;
 import com.ccp.especifications.db.utils.CcpDbUtils;
@@ -17,8 +17,7 @@ import com.ccp.especifications.http.CcpHttpResponseType;
 
 class DbQueryExecutorToElasticSearch implements CcpDbQueryExecutor {
 	
-	@CcpDependencyInject
-	private CcpDbUtils dbUtils;
+	private CcpDbUtils dbUtils = CcpInstanceInjection.getInstance(CcpDbUtils.class);
 	
 	private final ResponseHandlerToSearch searchDataTransform = new ResponseHandlerToSearch();
 

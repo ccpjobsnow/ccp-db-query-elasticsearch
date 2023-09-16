@@ -1,4 +1,4 @@
-package com.ccp.implementations.db.utils.elasticsearch;
+package com.ccp.implementations.db.query.elasticsearch;
 
 import java.util.ArrayList;
 import java.util.Arrays;

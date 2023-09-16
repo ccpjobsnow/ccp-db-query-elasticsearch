@@ -10,16 +10,16 @@ import java.util.stream.Collectors;
 import com.ccp.constantes.CcpConstants;
 import com.ccp.decorators.CcpMapDecorator;
 import com.ccp.dependency.injection.CcpDependencyInjection;
-import com.ccp.especifications.db.query.CcpDbQueryExecutor;
-import com.ccp.especifications.db.query.ElasticQuery;
-import com.ccp.especifications.db.utils.CcpDbUtils;
+import com.ccp.especifications.db.query.CcpQueryExecutor;
+import com.ccp.especifications.db.query.CcpDbQueryOptions;
+import com.ccp.especifications.db.utils.CcpDbRequester;
 import com.ccp.especifications.http.CcpHttpResponseType;
 
-class DbQueryExecutorToElasticSearch implements CcpDbQueryExecutor {
+class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 	
 
 	@Override
-	public CcpMapDecorator getTermsStatis(ElasticQuery elasticQuery, String[] resourcesNames, String fieldName) {
+	public CcpMapDecorator getTermsStatis(CcpDbQueryOptions elasticQuery, String[] resourcesNames, String fieldName) {
 		CcpMapDecorator md = new CcpMapDecorator();
 		CcpMapDecorator aggregations = this.getAggregations(elasticQuery, resourcesNames);
 		
@@ -36,8 +36,8 @@ class DbQueryExecutorToElasticSearch implements CcpDbQueryExecutor {
 		return md;
 	}
 	@Override
-	public CcpMapDecorator delete(ElasticQuery elasticQuery, String[] resourcesNames) {
-		CcpDbUtils dbUtils = CcpDependencyInjection.getDependency(CcpDbUtils.class);
+	public CcpMapDecorator delete(CcpDbQueryOptions elasticQuery, String[] resourcesNames) {
+		CcpDbRequester dbUtils = CcpDependencyInjection.getDependency(CcpDbRequester.class);
 		
 		CcpMapDecorator executeHttpRequest = dbUtils.executeHttpRequest("/_delete_by_query", "POST", 200, elasticQuery.values,  resourcesNames, CcpHttpResponseType.singleRecord);
 
@@ -45,8 +45,8 @@ class DbQueryExecutorToElasticSearch implements CcpDbQueryExecutor {
 	}
 
 	@Override
-	public CcpMapDecorator update(ElasticQuery elasticQuery, String[] resourcesNames, CcpMapDecorator newValues) {
-		CcpDbUtils dbUtils = CcpDependencyInjection.getDependency(CcpDbUtils.class);
+	public CcpMapDecorator update(CcpDbQueryOptions elasticQuery, String[] resourcesNames, CcpMapDecorator newValues) {
+		CcpDbRequester dbUtils = CcpDependencyInjection.getDependency(CcpDbRequester.class);
 		
 		CcpMapDecorator executeHttpRequest = dbUtils.executeHttpRequest("/_update_by_query", "POST", 200, elasticQuery.values,  resourcesNames, CcpHttpResponseType.singleRecord);
 		
@@ -54,7 +54,7 @@ class DbQueryExecutorToElasticSearch implements CcpDbQueryExecutor {
 	}
 
 	@Override
-	public void consumeQueryResult(ElasticQuery elasticQuery, String[] resourcesNames,
+	public void consumeQueryResult(CcpDbQueryOptions elasticQuery, String[] resourcesNames,
 			String scrollTime, int size, Consumer<List<CcpMapDecorator>> consumer, String... fields) {
 
 		long total = this.total(elasticQuery, resourcesNames);
@@ -75,7 +75,7 @@ class DbQueryExecutorToElasticSearch implements CcpDbQueryExecutor {
 			
 			CcpMapDecorator flows = new CcpMapDecorator().put("200", CcpConstants.DO_NOTHING).put("404", CcpConstants.RETURNS_EMPTY_JSON);
 			CcpMapDecorator scrollRequest = new CcpMapDecorator().put("scroll", scrollTime).put("scroll_id", scrollId);
-			CcpDbUtils dbUtils = CcpDependencyInjection.getDependency(CcpDbUtils.class);
+			CcpDbRequester dbUtils = CcpDependencyInjection.getDependency(CcpDbRequester.class);
 			
 			ResponseHandlerToSearch searchDataTransform = new ResponseHandlerToSearch();
 			CcpMapDecorator executeHttpRequest = dbUtils.executeHttpRequest("/_search/scroll", "POST", flows,  scrollRequest, CcpHttpResponseType.singleRecord);
@@ -85,8 +85,8 @@ class DbQueryExecutorToElasticSearch implements CcpDbQueryExecutor {
 	}
 
 	@Override
-	public long total(ElasticQuery elasticQuery, String[] resourcesNames) {
-		CcpDbUtils dbUtils = CcpDependencyInjection.getDependency(CcpDbUtils.class);
+	public long total(CcpDbQueryOptions elasticQuery, String[] resourcesNames) {
+		CcpDbRequester dbUtils = CcpDependencyInjection.getDependency(CcpDbRequester.class);
 		
 		CcpMapDecorator executeHttpRequest = dbUtils.executeHttpRequest("/_count", "GET", 200, elasticQuery.values, CcpHttpResponseType.singleRecord);
 		Long count = executeHttpRequest.getAsLongNumber("count");
@@ -94,7 +94,7 @@ class DbQueryExecutorToElasticSearch implements CcpDbQueryExecutor {
 	}
 
 	@Override
-	public List<CcpMapDecorator> getResultAsList(ElasticQuery elasticQuery, String[] resourcesNames, String... fieldsToSearch) {
+	public List<CcpMapDecorator> getResultAsList(CcpDbQueryOptions elasticQuery, String[] resourcesNames, String... fieldsToSearch) {
 		CcpMapDecorator executeHttpRequest = this.getResultAsPackage("/_search", "POST", 200, elasticQuery, resourcesNames, fieldsToSearch);
 		
 		ResponseHandlerToSearch searchDataTransform = new ResponseHandlerToSearch();
@@ -103,7 +103,7 @@ class DbQueryExecutorToElasticSearch implements CcpDbQueryExecutor {
 	}
 
 	@Override
-	public CcpMapDecorator getResultAsMap(ElasticQuery elasticQuery, String[] resourcesNames, String field) {
+	public CcpMapDecorator getResultAsMap(CcpDbQueryOptions elasticQuery, String[] resourcesNames, String field) {
 		List<CcpMapDecorator> resultAsList = this.getResultAsList(elasticQuery, resourcesNames, field);
 		CcpMapDecorator result = new CcpMapDecorator();
 		for (CcpMapDecorator md : resultAsList) {
@@ -115,16 +115,16 @@ class DbQueryExecutorToElasticSearch implements CcpDbQueryExecutor {
 	}
 
 	@Override
-	public CcpMapDecorator getResultAsPackage(String url, String method, int expectedStatus, ElasticQuery elasticQuery, String[] resourcesNames, String... fieldsToSearch) {
+	public CcpMapDecorator getResultAsPackage(String url, String method, int expectedStatus, CcpDbQueryOptions elasticQuery, String[] resourcesNames, String... fieldsToSearch) {
 		CcpMapDecorator _source = elasticQuery.values.put("_source", Arrays.asList(fieldsToSearch));
-		CcpDbUtils dbUtils = CcpDependencyInjection.getDependency(CcpDbUtils.class);
+		CcpDbRequester dbUtils = CcpDependencyInjection.getDependency(CcpDbRequester.class);
 		
 		CcpMapDecorator executeHttpRequest = dbUtils.executeHttpRequest(url, method, expectedStatus,  _source, resourcesNames, CcpHttpResponseType.singleRecord);
 		return executeHttpRequest;
 	}
 
 	@Override
-	public CcpMapDecorator getMap(ElasticQuery elasticQuery, String[] resourcesNames, String field) {
+	public CcpMapDecorator getMap(CcpDbQueryOptions elasticQuery, String[] resourcesNames, String field) {
 		CcpMapDecorator aggregations = this.getAggregations(elasticQuery, resourcesNames);
 		List<CcpMapDecorator> asMapList = aggregations.getAsMapList(field);
 		CcpMapDecorator retorno = new CcpMapDecorator();
@@ -137,7 +137,7 @@ class DbQueryExecutorToElasticSearch implements CcpDbQueryExecutor {
 	}
 
 	@Override
-	public CcpMapDecorator getAggregations(ElasticQuery elasticQuery, String[] resourcesNames) {
+	public CcpMapDecorator getAggregations(CcpDbQueryOptions elasticQuery, String[] resourcesNames) {
 		
 		CcpMapDecorator resultAsPackage = this.getResultAsPackage("/_search", "POST", 200, elasticQuery, resourcesNames);
 		Double total = resultAsPackage.getInternalMap("total").getAsDoubleNumber("value");

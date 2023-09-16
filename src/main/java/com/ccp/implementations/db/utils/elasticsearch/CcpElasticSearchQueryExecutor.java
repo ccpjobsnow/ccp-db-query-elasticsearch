@@ -2,11 +2,11 @@ package com.ccp.implementations.db.utils.elasticsearch;
 
 import com.ccp.dependency.injection.CcpInstanceProvider;
 
-public class Query implements CcpInstanceProvider  {
+public class CcpElasticSearchQueryExecutor implements CcpInstanceProvider  {
 
 	@Override
 	public Object getInstance() {
-		return new DbQueryExecutorToElasticSearch();
+		return new ElasticSearchQueryExecutor();
 	}
 
 }

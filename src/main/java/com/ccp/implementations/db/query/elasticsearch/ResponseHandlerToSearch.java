@@ -4,26 +4,26 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import com.ccp.decorators.CcpMapDecorator;
+import com.ccp.decorators.CcpJsonRepresentation;
 import com.ccp.process.CcpMapTransform;
 
-class ResponseHandlerToSearch implements CcpMapTransform<List<CcpMapDecorator>>{
+class ResponseHandlerToSearch implements CcpMapTransform<List<CcpJsonRepresentation>>{
 	private CcpSourceHandler handler = new CcpSourceHandler();
 	@Override
-	public List<CcpMapDecorator> transform(CcpMapDecorator values) {
-		List<CcpMapDecorator> hits = values.getInternalMap("hits").getAsMapList("hits");
-		List<CcpMapDecorator> collect = hits.stream().map(x -> this.handler.apply(x)).collect(Collectors.toList());
+	public List<CcpJsonRepresentation> transform(CcpJsonRepresentation values) {
+		List<CcpJsonRepresentation> hits = values.getInnerJson("hits").getJsonList("hits");
+		List<CcpJsonRepresentation> collect = hits.stream().map(x -> this.handler.apply(x)).collect(Collectors.toList());
 		return collect;
 	}
 
 }
-class CcpSourceHandler  implements Function<CcpMapDecorator, CcpMapDecorator>{
+class CcpSourceHandler  implements Function<CcpJsonRepresentation, CcpJsonRepresentation>{
 
 	@Override
-	public CcpMapDecorator apply(CcpMapDecorator x) {
-		CcpMapDecorator internalMap = x.getInternalMap("_source");
+	public CcpJsonRepresentation apply(CcpJsonRepresentation x) {
+		CcpJsonRepresentation internalMap = x.getInnerJson("_source");
 		String id = x.getAsString("_id");
-		CcpMapDecorator put = internalMap.put("id", id);
+		CcpJsonRepresentation put = internalMap.put("id", id);
 		return put;
 	}
 	

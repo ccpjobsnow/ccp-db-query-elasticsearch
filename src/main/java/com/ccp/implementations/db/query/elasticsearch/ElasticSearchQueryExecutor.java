@@ -8,7 +8,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import com.ccp.constantes.CcpConstants;
-import com.ccp.decorators.CcpMapDecorator;
+import com.ccp.decorators.CcpJsonRepresentation;
 import com.ccp.dependency.injection.CcpDependencyInjection;
 import com.ccp.especifications.db.query.CcpQueryExecutor;
 import com.ccp.especifications.db.query.CcpDbQueryOptions;
@@ -19,13 +19,13 @@ class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 	
 
 	@Override
-	public CcpMapDecorator getTermsStatis(CcpDbQueryOptions elasticQuery, String[] resourcesNames, String fieldName) {
-		CcpMapDecorator md = new CcpMapDecorator();
-		CcpMapDecorator aggregations = this.getAggregations(elasticQuery, resourcesNames);
+	public CcpJsonRepresentation getTermsStatis(CcpDbQueryOptions elasticQuery, String[] resourcesNames, String fieldName) {
+		CcpJsonRepresentation md = CcpConstants.EMPTY_JSON;
+		CcpJsonRepresentation aggregations = this.getAggregations(elasticQuery, resourcesNames);
 		
-		List<CcpMapDecorator> asMapList = aggregations.getAsMapList(fieldName);
+		List<CcpJsonRepresentation> asMapList = aggregations.getJsonList(fieldName);
 		
-		for (CcpMapDecorator mapDecorator : asMapList) {
+		for (CcpJsonRepresentation mapDecorator : asMapList) {
 			String key = mapDecorator.getAsString("key");
 			Long asLongNumber = mapDecorator.getAsLongNumber("key");
 			if(asLongNumber != null) {
@@ -36,26 +36,26 @@ class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 		return md;
 	}
 	@Override
-	public CcpMapDecorator delete(CcpDbQueryOptions elasticQuery, String[] resourcesNames) {
+	public CcpJsonRepresentation delete(CcpDbQueryOptions elasticQuery, String[] resourcesNames) {
 		CcpDbRequester dbUtils = CcpDependencyInjection.getDependency(CcpDbRequester.class);
 		
-		CcpMapDecorator executeHttpRequest = dbUtils.executeHttpRequest("/_delete_by_query", "POST", 200, elasticQuery.values,  resourcesNames, CcpHttpResponseType.singleRecord);
+		CcpJsonRepresentation executeHttpRequest = dbUtils.executeHttpRequest("/_delete_by_query", "POST", 200, elasticQuery.values,  resourcesNames, CcpHttpResponseType.singleRecord);
 
 		return executeHttpRequest;
 	}
 
 	@Override
-	public CcpMapDecorator update(CcpDbQueryOptions elasticQuery, String[] resourcesNames, CcpMapDecorator newValues) {
+	public CcpJsonRepresentation update(CcpDbQueryOptions elasticQuery, String[] resourcesNames, CcpJsonRepresentation newValues) {
 		CcpDbRequester dbUtils = CcpDependencyInjection.getDependency(CcpDbRequester.class);
 		
-		CcpMapDecorator executeHttpRequest = dbUtils.executeHttpRequest("/_update_by_query", "POST", 200, elasticQuery.values,  resourcesNames, CcpHttpResponseType.singleRecord);
+		CcpJsonRepresentation executeHttpRequest = dbUtils.executeHttpRequest("/_update_by_query", "POST", 200, elasticQuery.values,  resourcesNames, CcpHttpResponseType.singleRecord);
 		
 		return executeHttpRequest;
 	}
 
 	@Override
 	public void consumeQueryResult(CcpDbQueryOptions elasticQuery, String[] resourcesNames,
-			String scrollTime, int size, Consumer<List<CcpMapDecorator>> consumer, String... fields) {
+			String scrollTime, int size, Consumer<List<CcpJsonRepresentation>> consumer, String... fields) {
 
 		long total = this.total(elasticQuery, resourcesNames);
 		
@@ -66,20 +66,20 @@ class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 			boolean primeiraPagina = k == 0;
 			
 			if(primeiraPagina) {
-				CcpMapDecorator resultAsPackage = this.getResultAsPackage("/_search", "POST", 200, elasticQuery, resourcesNames, fields);
-				List<CcpMapDecorator> hits = resultAsPackage.getAsMapList("hits");
+				CcpJsonRepresentation resultAsPackage = this.getResultAsPackage("/_search", "POST", 200, elasticQuery, resourcesNames, fields);
+				List<CcpJsonRepresentation> hits = resultAsPackage.getJsonList("hits");
 				scrollId = resultAsPackage.getAsString("scrollId");
 				consumer.accept(hits);
 				continue;
 			}
 			
-			CcpMapDecorator flows = new CcpMapDecorator().put("200", CcpConstants.DO_NOTHING).put("404", CcpConstants.RETURNS_EMPTY_JSON);
-			CcpMapDecorator scrollRequest = new CcpMapDecorator().put("scroll", scrollTime).put("scroll_id", scrollId);
+			CcpJsonRepresentation flows = CcpConstants.EMPTY_JSON.put("200", CcpConstants.DO_NOTHING).put("404", CcpConstants.RETURNS_EMPTY_JSON);
+			CcpJsonRepresentation scrollRequest = CcpConstants.EMPTY_JSON.put("scroll", scrollTime).put("scroll_id", scrollId);
 			CcpDbRequester dbUtils = CcpDependencyInjection.getDependency(CcpDbRequester.class);
 			
 			ResponseHandlerToSearch searchDataTransform = new ResponseHandlerToSearch();
-			CcpMapDecorator executeHttpRequest = dbUtils.executeHttpRequest("/_search/scroll", "POST", flows,  scrollRequest, CcpHttpResponseType.singleRecord);
-			List<CcpMapDecorator> hits = searchDataTransform.transform(executeHttpRequest);
+			CcpJsonRepresentation executeHttpRequest = dbUtils.executeHttpRequest("/_search/scroll", "POST", flows,  scrollRequest, CcpHttpResponseType.singleRecord);
+			List<CcpJsonRepresentation> hits = searchDataTransform.transform(executeHttpRequest);
 			consumer.accept(hits);
 		}
 	}
@@ -88,25 +88,25 @@ class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 	public long total(CcpDbQueryOptions elasticQuery, String[] resourcesNames) {
 		CcpDbRequester dbUtils = CcpDependencyInjection.getDependency(CcpDbRequester.class);
 		
-		CcpMapDecorator executeHttpRequest = dbUtils.executeHttpRequest("/_count", "GET", 200, elasticQuery.values, CcpHttpResponseType.singleRecord);
+		CcpJsonRepresentation executeHttpRequest = dbUtils.executeHttpRequest("/_count", "GET", 200, elasticQuery.values, CcpHttpResponseType.singleRecord);
 		Long count = executeHttpRequest.getAsLongNumber("count");
 		return count;
 	}
 
 	@Override
-	public List<CcpMapDecorator> getResultAsList(CcpDbQueryOptions elasticQuery, String[] resourcesNames, String... fieldsToSearch) {
-		CcpMapDecorator executeHttpRequest = this.getResultAsPackage("/_search", "POST", 200, elasticQuery, resourcesNames, fieldsToSearch);
+	public List<CcpJsonRepresentation> getResultAsList(CcpDbQueryOptions elasticQuery, String[] resourcesNames, String... fieldsToSearch) {
+		CcpJsonRepresentation executeHttpRequest = this.getResultAsPackage("/_search", "POST", 200, elasticQuery, resourcesNames, fieldsToSearch);
 		
 		ResponseHandlerToSearch searchDataTransform = new ResponseHandlerToSearch();
-		List<CcpMapDecorator> hits = searchDataTransform.transform(executeHttpRequest);
+		List<CcpJsonRepresentation> hits = searchDataTransform.transform(executeHttpRequest);
 		return hits;
 	}
 
 	@Override
-	public CcpMapDecorator getResultAsMap(CcpDbQueryOptions elasticQuery, String[] resourcesNames, String field) {
-		List<CcpMapDecorator> resultAsList = this.getResultAsList(elasticQuery, resourcesNames, field);
-		CcpMapDecorator result = new CcpMapDecorator();
-		for (CcpMapDecorator md : resultAsList) {
+	public CcpJsonRepresentation getResultAsMap(CcpDbQueryOptions elasticQuery, String[] resourcesNames, String field) {
+		List<CcpJsonRepresentation> resultAsList = this.getResultAsList(elasticQuery, resourcesNames, field);
+		CcpJsonRepresentation result = CcpConstants.EMPTY_JSON;
+		for (CcpJsonRepresentation md : resultAsList) {
 			String id = md.getAsString("id");
 			Object value = md.get(field);
 			result = result.put(id, value);
@@ -115,20 +115,20 @@ class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 	}
 
 	@Override
-	public CcpMapDecorator getResultAsPackage(String url, String method, int expectedStatus, CcpDbQueryOptions elasticQuery, String[] resourcesNames, String... fieldsToSearch) {
-		CcpMapDecorator _source = elasticQuery.values.put("_source", Arrays.asList(fieldsToSearch));
+	public CcpJsonRepresentation getResultAsPackage(String url, String method, int expectedStatus, CcpDbQueryOptions elasticQuery, String[] resourcesNames, String... fieldsToSearch) {
+		CcpJsonRepresentation _source = elasticQuery.values.put("_source", Arrays.asList(fieldsToSearch));
 		CcpDbRequester dbUtils = CcpDependencyInjection.getDependency(CcpDbRequester.class);
 		
-		CcpMapDecorator executeHttpRequest = dbUtils.executeHttpRequest(url, method, expectedStatus,  _source, resourcesNames, CcpHttpResponseType.singleRecord);
+		CcpJsonRepresentation executeHttpRequest = dbUtils.executeHttpRequest(url, method, expectedStatus,  _source, resourcesNames, CcpHttpResponseType.singleRecord);
 		return executeHttpRequest;
 	}
 
 	@Override
-	public CcpMapDecorator getMap(CcpDbQueryOptions elasticQuery, String[] resourcesNames, String field) {
-		CcpMapDecorator aggregations = this.getAggregations(elasticQuery, resourcesNames);
-		List<CcpMapDecorator> asMapList = aggregations.getAsMapList(field);
-		CcpMapDecorator retorno = new CcpMapDecorator();
-		for (CcpMapDecorator md : asMapList) {
+	public CcpJsonRepresentation getMap(CcpDbQueryOptions elasticQuery, String[] resourcesNames, String field) {
+		CcpJsonRepresentation aggregations = this.getAggregations(elasticQuery, resourcesNames);
+		List<CcpJsonRepresentation> asMapList = aggregations.getJsonList(field);
+		CcpJsonRepresentation retorno = CcpConstants.EMPTY_JSON;
+		for (CcpJsonRepresentation md : asMapList) {
 			Object value = md.get("value");
 			String key = md.getAsString("key");
 			retorno = retorno.put(key, value);
@@ -137,23 +137,23 @@ class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 	}
 
 	@Override
-	public CcpMapDecorator getAggregations(CcpDbQueryOptions elasticQuery, String[] resourcesNames) {
+	public CcpJsonRepresentation getAggregations(CcpDbQueryOptions elasticQuery, String[] resourcesNames) {
 		
-		CcpMapDecorator resultAsPackage = this.getResultAsPackage("/_search", "POST", 200, elasticQuery, resourcesNames);
-		Double total = resultAsPackage.getInternalMap("total").getAsDoubleNumber("value");
-		CcpMapDecorator result = new CcpMapDecorator();
+		CcpJsonRepresentation resultAsPackage = this.getResultAsPackage("/_search", "POST", 200, elasticQuery, resourcesNames);
+		Double total = resultAsPackage.getInnerJson("total").getAsDoubleNumber("value");
+		CcpJsonRepresentation result = CcpConstants.EMPTY_JSON;
 		result = result.put("total", total);
-		CcpMapDecorator aggregations = resultAsPackage.getInternalMap("aggregations");
+		CcpJsonRepresentation aggregations = resultAsPackage.getInnerJson("aggregations");
 		Set<String> keySet = aggregations.keySet();
 		for (String key : keySet) {
-			CcpMapDecorator value = aggregations.getInternalMap(key);
+			CcpJsonRepresentation value = aggregations.getInnerJson(key);
 			if(value.containsKey("buckets")) {
-				List<CcpMapDecorator> bucket = new ArrayList<>();
-				List<CcpMapDecorator> results = value.getAsMapList("buckets");
-				for (CcpMapDecorator object : results) {
+				List<CcpJsonRepresentation> bucket = new ArrayList<>();
+				List<CcpJsonRepresentation> results = value.getJsonList("buckets");
+				for (CcpJsonRepresentation object : results) {
 					String keyName = object.getAsString("key");
 					Double keyCount = object.getAsDoubleNumber("doc_count");
-					CcpMapDecorator res = new CcpMapDecorator();
+					CcpJsonRepresentation res = CcpConstants.EMPTY_JSON;
 					res = res.put("key", keyName);
 					res = res.put("value", keyCount);
 					bucket.add(res);

@@ -9,7 +9,7 @@ import com.ccp.process.CcpMapTransform;
 
 class ResponseHandlerToSearch implements CcpMapTransform<List<CcpJsonRepresentation>>{
 	private CcpSourceHandler handler = new CcpSourceHandler();
-	@Override
+	
 	public List<CcpJsonRepresentation> transform(CcpJsonRepresentation values) {
 		List<CcpJsonRepresentation> hits = values.getInnerJson("hits").getJsonList("hits");
 		List<CcpJsonRepresentation> collect = hits.stream().map(x -> this.handler.apply(x)).collect(Collectors.toList());
@@ -19,7 +19,7 @@ class ResponseHandlerToSearch implements CcpMapTransform<List<CcpJsonRepresentat
 }
 class CcpSourceHandler  implements Function<CcpJsonRepresentation, CcpJsonRepresentation>{
 
-	@Override
+	
 	public CcpJsonRepresentation apply(CcpJsonRepresentation x) {
 		CcpJsonRepresentation internalMap = x.getInnerJson("_source");
 		String id = x.getAsString("_id");

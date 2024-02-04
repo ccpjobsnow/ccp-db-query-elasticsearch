@@ -18,7 +18,7 @@ import com.ccp.especifications.http.CcpHttpResponseType;
 class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 	
 
-	@Override
+	
 	public CcpJsonRepresentation getTermsStatis(CcpDbQueryOptions elasticQuery, String[] resourcesNames, String fieldName) {
 		CcpJsonRepresentation md = CcpConstants.EMPTY_JSON;
 		CcpJsonRepresentation aggregations = this.getAggregations(elasticQuery, resourcesNames);
@@ -35,7 +35,7 @@ class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 		}
 		return md;
 	}
-	@Override
+	
 	public CcpJsonRepresentation delete(CcpDbQueryOptions elasticQuery, String[] resourcesNames) {
 		CcpDbRequester dbUtils = CcpDependencyInjection.getDependency(CcpDbRequester.class);
 		
@@ -44,7 +44,7 @@ class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 		return executeHttpRequest;
 	}
 
-	@Override
+	
 	public CcpJsonRepresentation update(CcpDbQueryOptions elasticQuery, String[] resourcesNames, CcpJsonRepresentation newValues) {
 		CcpDbRequester dbUtils = CcpDependencyInjection.getDependency(CcpDbRequester.class);
 		
@@ -53,7 +53,7 @@ class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 		return executeHttpRequest;
 	}
 
-	@Override
+	
 	public void consumeQueryResult(CcpDbQueryOptions elasticQuery, String[] resourcesNames,
 			String scrollTime, int size, Consumer<List<CcpJsonRepresentation>> consumer, String... fields) {
 
@@ -84,7 +84,7 @@ class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 		}
 	}
 
-	@Override
+	
 	public long total(CcpDbQueryOptions elasticQuery, String[] resourcesNames) {
 		CcpDbRequester dbUtils = CcpDependencyInjection.getDependency(CcpDbRequester.class);
 		
@@ -93,7 +93,7 @@ class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 		return count;
 	}
 
-	@Override
+	
 	public List<CcpJsonRepresentation> getResultAsList(CcpDbQueryOptions elasticQuery, String[] resourcesNames, String... fieldsToSearch) {
 		CcpJsonRepresentation executeHttpRequest = this.getResultAsPackage("/_search", "POST", 200, elasticQuery, resourcesNames, fieldsToSearch);
 		
@@ -102,7 +102,7 @@ class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 		return hits;
 	}
 
-	@Override
+	
 	public CcpJsonRepresentation getResultAsMap(CcpDbQueryOptions elasticQuery, String[] resourcesNames, String field) {
 		List<CcpJsonRepresentation> resultAsList = this.getResultAsList(elasticQuery, resourcesNames, field);
 		CcpJsonRepresentation result = CcpConstants.EMPTY_JSON;
@@ -114,7 +114,7 @@ class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 		return result;
 	}
 
-	@Override
+	
 	public CcpJsonRepresentation getResultAsPackage(String url, String method, int expectedStatus, CcpDbQueryOptions elasticQuery, String[] resourcesNames, String... fieldsToSearch) {
 		CcpJsonRepresentation _source = elasticQuery.values.put("_source", Arrays.asList(fieldsToSearch));
 		CcpDbRequester dbUtils = CcpDependencyInjection.getDependency(CcpDbRequester.class);
@@ -123,7 +123,7 @@ class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 		return executeHttpRequest;
 	}
 
-	@Override
+	
 	public CcpJsonRepresentation getMap(CcpDbQueryOptions elasticQuery, String[] resourcesNames, String field) {
 		CcpJsonRepresentation aggregations = this.getAggregations(elasticQuery, resourcesNames);
 		List<CcpJsonRepresentation> asMapList = aggregations.getJsonList(field);
@@ -136,7 +136,7 @@ class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 		return retorno;
 	}
 
-	@Override
+	
 	public CcpJsonRepresentation getAggregations(CcpDbQueryOptions elasticQuery, String[] resourcesNames) {
 		
 		CcpJsonRepresentation resultAsPackage = this.getResultAsPackage("/_search", "POST", 200, elasticQuery, resourcesNames);

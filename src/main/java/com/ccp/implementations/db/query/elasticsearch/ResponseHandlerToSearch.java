@@ -11,7 +11,7 @@ class ResponseHandlerToSearch implements CcpMapTransform<List<CcpJsonRepresentat
 	private CcpSourceHandler handler = new CcpSourceHandler();
 	
 	public List<CcpJsonRepresentation> transform(CcpJsonRepresentation values) {
-		List<CcpJsonRepresentation> hits = values.getInnerJson("hits").getJsonList("hits");
+		List<CcpJsonRepresentation> hits = values.getInnerJson("hits").getAsJsonList("hits");
 		List<CcpJsonRepresentation> collect = hits.stream().map(x -> this.handler.apply(x)).collect(Collectors.toList());
 		return collect;
 	}

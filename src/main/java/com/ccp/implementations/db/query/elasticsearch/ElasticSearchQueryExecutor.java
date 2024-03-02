@@ -23,7 +23,7 @@ class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 		CcpJsonRepresentation md = CcpConstants.EMPTY_JSON;
 		CcpJsonRepresentation aggregations = this.getAggregations(elasticQuery, resourcesNames);
 		
-		List<CcpJsonRepresentation> asMapList = aggregations.getJsonList(fieldName);
+		List<CcpJsonRepresentation> asMapList = aggregations.getAsJsonList(fieldName);
 		
 		for (CcpJsonRepresentation mapDecorator : asMapList) {
 			String key = mapDecorator.getAsString("key");
@@ -67,7 +67,7 @@ class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 			
 			if(primeiraPagina) {
 				CcpJsonRepresentation resultAsPackage = this.getResultAsPackage("/_search", "POST", 200, elasticQuery, resourcesNames, fields);
-				List<CcpJsonRepresentation> hits = resultAsPackage.getJsonList("hits");
+				List<CcpJsonRepresentation> hits = resultAsPackage.getAsJsonList("hits");
 				scrollId = resultAsPackage.getAsString("scrollId");
 				consumer.accept(hits);
 				continue;
@@ -126,7 +126,7 @@ class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 	
 	public CcpJsonRepresentation getMap(CcpDbQueryOptions elasticQuery, String[] resourcesNames, String field) {
 		CcpJsonRepresentation aggregations = this.getAggregations(elasticQuery, resourcesNames);
-		List<CcpJsonRepresentation> asMapList = aggregations.getJsonList(field);
+		List<CcpJsonRepresentation> asMapList = aggregations.getAsJsonList(field);
 		CcpJsonRepresentation retorno = CcpConstants.EMPTY_JSON;
 		for (CcpJsonRepresentation md : asMapList) {
 			Object value = md.get("value");
@@ -149,7 +149,7 @@ class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 			CcpJsonRepresentation value = aggregations.getInnerJson(key);
 			if(value.containsKey("buckets")) {
 				List<CcpJsonRepresentation> bucket = new ArrayList<>();
-				List<CcpJsonRepresentation> results = value.getJsonList("buckets");
+				List<CcpJsonRepresentation> results = value.getAsJsonList("buckets");
 				for (CcpJsonRepresentation object : results) {
 					String keyName = object.getAsString("key");
 					Double keyCount = object.getAsDoubleNumber("doc_count");

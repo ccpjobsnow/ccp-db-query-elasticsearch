@@ -14,7 +14,6 @@ class ResponseHandlerToSearch implements CcpMapTransform<List<CcpJsonRepresentat
 		List<CcpJsonRepresentation> collect = hits.stream().map(x -> this.handler.apply(x)).collect(Collectors.toList());
 		return collect;
 	}
-
 }
 
 

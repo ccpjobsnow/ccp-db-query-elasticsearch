@@ -39,7 +39,7 @@ class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 	public CcpJsonRepresentation delete(CcpDbQueryOptions elasticQuery, String[] resourcesNames) {
 		CcpDbRequester dbUtils = CcpDependencyInjection.getDependency(CcpDbRequester.class);
 		
-		CcpJsonRepresentation executeHttpRequest = dbUtils.executeHttpRequest("/_delete_by_query", "POST", 200, elasticQuery.values,  resourcesNames, CcpHttpResponseType.singleRecord);
+		CcpJsonRepresentation executeHttpRequest = dbUtils.executeHttpRequest("delete", "/_delete_by_query", "POST", 200, elasticQuery.values,  resourcesNames, CcpHttpResponseType.singleRecord);
 
 		return executeHttpRequest;
 	}
@@ -48,7 +48,7 @@ class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 	public CcpJsonRepresentation update(CcpDbQueryOptions elasticQuery, String[] resourcesNames, CcpJsonRepresentation newValues) {
 		CcpDbRequester dbUtils = CcpDependencyInjection.getDependency(CcpDbRequester.class);
 		
-		CcpJsonRepresentation executeHttpRequest = dbUtils.executeHttpRequest("/_update_by_query", "POST", 200, elasticQuery.values,  resourcesNames, CcpHttpResponseType.singleRecord);
+		CcpJsonRepresentation executeHttpRequest = dbUtils.executeHttpRequest("update", "/_update_by_query", "POST", 200, elasticQuery.values,  resourcesNames, CcpHttpResponseType.singleRecord);
 		
 		return executeHttpRequest;
 	}
@@ -64,13 +64,13 @@ class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 		CcpDbRequester dbUtils = CcpDependencyInjection.getDependency(CcpDbRequester.class);
 		
 		for(int k = 0; k <= total; k += size) {
-			boolean primeiraPagina = k == 0;
+			boolean firstPage = k == 0;
 			
-			if(primeiraPagina) {
+			if(firstPage) {
 				String url = indexes + "/_search?size=" + size + "&scroll="+ scrollTime;
 				ResponseHandlerToConsumeSearch searchDataTransform = new ResponseHandlerToConsumeSearch();
 				CcpJsonRepresentation flows = CcpConstants.EMPTY_JSON.put("200", CcpConstants.DO_NOTHING).put("404", CcpConstants.RETURNS_EMPTY_JSON);
-				CcpJsonRepresentation executeHttpRequest = dbUtils.executeHttpRequest(url, "POST", flows,  CcpConstants.EMPTY_JSON, CcpHttpResponseType.singleRecord);
+				CcpJsonRepresentation executeHttpRequest = dbUtils.executeHttpRequest("consumeQueryResult", url, "POST", flows,  CcpConstants.EMPTY_JSON, CcpHttpResponseType.singleRecord);
 				CcpJsonRepresentation _package = searchDataTransform.transform(executeHttpRequest);
 				List<CcpJsonRepresentation> hits = _package.getAsJsonList("hits");
 				scrollId = _package.getAsString("_scroll_id");
@@ -84,7 +84,7 @@ class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 			CcpJsonRepresentation scrollRequest = CcpConstants.EMPTY_JSON.put("scroll", scrollTime).put("scroll_id", scrollId);
 			
 			ResponseHandlerToSearch searchDataTransform = new ResponseHandlerToSearch();
-			CcpJsonRepresentation executeHttpRequest = dbUtils.executeHttpRequest("/_search/scroll", "POST", flows,  scrollRequest, CcpHttpResponseType.singleRecord);
+			CcpJsonRepresentation executeHttpRequest = dbUtils.executeHttpRequest("consumeQueryResult", "/_search/scroll", "POST", flows,  scrollRequest, CcpHttpResponseType.singleRecord);
 			List<CcpJsonRepresentation> hits = searchDataTransform.transform(executeHttpRequest);
 			for (CcpJsonRepresentation hit : hits) {
 				consumer.accept(hit);
@@ -97,7 +97,7 @@ class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 		CcpDbRequester dbUtils = CcpDependencyInjection.getDependency(CcpDbRequester.class);
 		String indexes = this.getIndexes(resourcesNames);
 		String url = indexes + "/_count";
-		CcpJsonRepresentation executeHttpRequest = dbUtils.executeHttpRequest(url, "GET", 200, elasticQuery.values, CcpHttpResponseType.singleRecord);
+		CcpJsonRepresentation executeHttpRequest = dbUtils.executeHttpRequest("getTotalRecords", url, "GET", 200, elasticQuery.values, CcpHttpResponseType.singleRecord);
 		Long count = executeHttpRequest.getAsLongNumber("count");
 		return count;
 	}
@@ -133,7 +133,7 @@ class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 		CcpJsonRepresentation _source = elasticQuery.values.put("_source", Arrays.asList(fieldsToSearch));
 		CcpDbRequester dbUtils = CcpDependencyInjection.getDependency(CcpDbRequester.class);
 		
-		CcpJsonRepresentation executeHttpRequest = dbUtils.executeHttpRequest(url, method, expectedStatus,  _source, resourcesNames, CcpHttpResponseType.singleRecord);
+		CcpJsonRepresentation executeHttpRequest = dbUtils.executeHttpRequest("getResultAsPackage", url, method, expectedStatus,  _source, resourcesNames, CcpHttpResponseType.singleRecord);
 		return executeHttpRequest;
 	}
 

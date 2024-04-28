@@ -26,11 +26,7 @@ class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 		List<CcpJsonRepresentation> asMapList = aggregations.getAsJsonList(fieldName);
 		
 		for (CcpJsonRepresentation mapDecorator : asMapList) {
-			String key = mapDecorator.getAsString("key");
-			Long asLongNumber = mapDecorator.getAsLongNumber("key");
-			if(asLongNumber != null) {
-				key = "" + asLongNumber;
-			}
+			String key = ""+ mapDecorator.getAsString("key");
 			md = md.put(key, mapDecorator.getAsLongNumber("value"));
 		}
 		return md;

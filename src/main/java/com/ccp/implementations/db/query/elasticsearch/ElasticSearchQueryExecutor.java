@@ -35,7 +35,7 @@ class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 	public CcpJsonRepresentation delete(CcpDbQueryOptions elasticQuery, String[] resourcesNames) {
 		CcpDbRequester dbUtils = CcpDependencyInjection.getDependency(CcpDbRequester.class);
 		
-		CcpJsonRepresentation executeHttpRequest = dbUtils.executeHttpRequest("delete", "/_delete_by_query", "POST", 200, elasticQuery.values,  resourcesNames, CcpHttpResponseType.singleRecord);
+		CcpJsonRepresentation executeHttpRequest = dbUtils.executeHttpRequest("delete", "/_delete_by_query", "POST", 200, elasticQuery.json,  resourcesNames, CcpHttpResponseType.singleRecord);
 
 		return executeHttpRequest;
 	}
@@ -44,7 +44,7 @@ class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 	public CcpJsonRepresentation update(CcpDbQueryOptions elasticQuery, String[] resourcesNames, CcpJsonRepresentation newValues) {
 		CcpDbRequester dbUtils = CcpDependencyInjection.getDependency(CcpDbRequester.class);
 		
-		CcpJsonRepresentation executeHttpRequest = dbUtils.executeHttpRequest("update", "/_update_by_query", "POST", 200, elasticQuery.values,  resourcesNames, CcpHttpResponseType.singleRecord);
+		CcpJsonRepresentation executeHttpRequest = dbUtils.executeHttpRequest("update", "/_update_by_query", "POST", 200, elasticQuery.json,  resourcesNames, CcpHttpResponseType.singleRecord);
 		
 		return executeHttpRequest;
 	}
@@ -93,7 +93,7 @@ class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 		CcpDbRequester dbUtils = CcpDependencyInjection.getDependency(CcpDbRequester.class);
 		String indexes = this.getIndexes(resourcesNames);
 		String url = indexes + "/_count";
-		CcpJsonRepresentation executeHttpRequest = dbUtils.executeHttpRequest("getTotalRecords", url, "GET", 200, elasticQuery.values, CcpHttpResponseType.singleRecord);
+		CcpJsonRepresentation executeHttpRequest = dbUtils.executeHttpRequest("getTotalRecords", url, "GET", 200, elasticQuery.json, CcpHttpResponseType.singleRecord);
 		Long count = executeHttpRequest.getAsLongNumber("count");
 		return count;
 	}
@@ -126,7 +126,7 @@ class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 
 	
 	public CcpJsonRepresentation getResultAsPackage(String url, String method, int expectedStatus, CcpDbQueryOptions elasticQuery, String[] resourcesNames, String... fieldsToSearch) {
-		CcpJsonRepresentation _source = elasticQuery.values.put("_source", Arrays.asList(fieldsToSearch));
+		CcpJsonRepresentation _source = elasticQuery.json.put("_source", Arrays.asList(fieldsToSearch));
 		CcpDbRequester dbUtils = CcpDependencyInjection.getDependency(CcpDbRequester.class);
 		
 		CcpJsonRepresentation executeHttpRequest = dbUtils.executeHttpRequest("getResultAsPackage", url, method, expectedStatus,  _source, resourcesNames, CcpHttpResponseType.singleRecord);

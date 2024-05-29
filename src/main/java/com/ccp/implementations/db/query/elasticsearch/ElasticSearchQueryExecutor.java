@@ -1,19 +1,18 @@
 package com.ccp.implementations.db.query.elasticsearch;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import com.ccp.constantes.CcpConstants;
 import com.ccp.decorators.CcpJsonRepresentation;
 import com.ccp.dependency.injection.CcpDependencyInjection;
-import com.ccp.especifications.db.query.CcpQueryExecutor;
 import com.ccp.especifications.db.query.CcpDbQueryOptions;
+import com.ccp.especifications.db.query.CcpQueryExecutor;
 import com.ccp.especifications.db.utils.CcpDbRequester;
 import com.ccp.especifications.http.CcpHttpResponseType;
+import com.ccp.implementations.json.gson.CcpGsonJsonHandler;
 
 class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 	
@@ -117,7 +116,7 @@ class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 		List<CcpJsonRepresentation> resultAsList = this.getResultAsList(elasticQuery, resourcesNames, field);
 		CcpJsonRepresentation result = CcpConstants.EMPTY_JSON;
 		for (CcpJsonRepresentation md : resultAsList) {
-			String id = md.getAsString("id");
+			String id = md.getAsString("_id");
 			Object value = md.get(field);
 			result = result.put(id, value);
 		}
@@ -147,35 +146,76 @@ class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 	}
 
 	
-	public CcpJsonRepresentation getAggregations(CcpDbQueryOptions elasticQuery, String[] resourcesNames) {
+	public CcpJsonRepresentation getAggregations(CcpDbQueryOptions elasticQuery, String... resourcesNames) {
 		
 		CcpJsonRepresentation resultAsPackage = this.getResultAsPackage("/_search", "POST", 200, elasticQuery, resourcesNames);
-		Double total = resultAsPackage.getInnerJson("total").getAsDoubleNumber("value");
-		CcpJsonRepresentation result = CcpConstants.EMPTY_JSON;
-		result = result.put("total", total);
-		CcpJsonRepresentation aggregations = resultAsPackage.getInnerJson("aggregations");
-		Set<String> keySet = aggregations.keySet();
-		for (String key : keySet) {
-			CcpJsonRepresentation value = aggregations.getInnerJson(key);
-			if(value.containsKey("buckets")) {
-				List<CcpJsonRepresentation> bucket = new ArrayList<>();
-				List<CcpJsonRepresentation> results = value.getAsJsonList("buckets");
-				for (CcpJsonRepresentation object : results) {
-					String keyName = object.getAsString("key");
-					Double keyCount = object.getAsDoubleNumber("doc_count");
-					CcpJsonRepresentation res = CcpConstants.EMPTY_JSON;
-					res = res.put("key", keyName);
-					res = res.put("value", keyCount);
-					bucket.add(res);
-				}
-				result = result.put(key, bucket.stream().map(x -> x.content).collect(Collectors.toList()));
-				continue;
-			}
-			result = result.put(key, value.getAsDoubleNumber("value"));
-		}
+		CcpJsonRepresentation result = getAggregations(resultAsPackage);
 		
 		return result;
 	}
 
+	public static CcpJsonRepresentation getAggregations(CcpJsonRepresentation resultAsPackage) {
+		CcpJsonRepresentation innerJson = resultAsPackage.getInnerJson("total");
+		CcpJsonRepresentation result = CcpConstants.EMPTY_JSON;
+		boolean containsAllKeys = innerJson.containsAllKeys("value");
+		if(containsAllKeys) {
+			Double total = innerJson.getAsDoubleNumber("value");
+			result = result.put("total", total);			
+		}
+		CcpJsonRepresentation aggregations = resultAsPackage.getInnerJson("aggregations");
+		Set<String> allAggregations = aggregations.keySet();
+		
+		for (String aggregationName : allAggregations) {
+			
+			CcpJsonRepresentation value = aggregations.getInnerJson(aggregationName);
+			
+			boolean ignore = value.containsKey("buckets") == false;
+			
+			if(ignore) {
+				Double asDoubleNumber = value.getAsDoubleNumber("value");
+				result = result.put(aggregationName, asDoubleNumber);
+				continue;
+			}
+			List<CcpJsonRepresentation> results = value.getAsJsonList("buckets");
+			
+			for (CcpJsonRepresentation object : results) {
+				String key = object.getAsString("key");
+				Double asDoubleNumber = object.getAsDoubleNumber("doc_count");
+				result = result.addToItem(aggregationName, key, asDoubleNumber);
+			}
+		}
+		return result;
+	}
+
+	public static void main(String[] args) {
+		CcpDependencyInjection.loadAllDependencies(new CcpGsonJsonHandler());
+		CcpJsonRepresentation resultAsPackage = new CcpJsonRepresentation("{\r\n"
+				+ "    \"aggregations\": {\r\n"
+				+ "        \"my-agg-name\": {\r\n"
+				+ "            \"doc_count_error_upper_bound\": 0,\r\n"
+				+ "            \"sum_other_doc_count\": 0,\r\n"
+				+ "            \"buckets\": [\r\n"
+				+ "                {\r\n"
+				+ "                    \"key\": \"foo\",\r\n"
+				+ "                    \"doc_count\": 5,\r\n"
+				+ "                    \"my-sub-agg-name\": {\r\n"
+				+ "                        \"value\": 75\r\n"
+				+ "                    }\r\n"
+				+ "                },\r\n"
+				+ "               {\r\n"
+				+ "                    \"key\": \"foo2\",\r\n"
+				+ "                    \"doc_count\": 5,\r\n"
+				+ "                    \"my-sub-agg-name\": {\r\n"
+				+ "                        \"value\": 75\r\n"
+				+ "                    }\r\n"
+				+ "                }\r\n"
+				+ "				\r\n"
+				+ "            ]\r\n"
+				+ "        }\r\n"
+				+ "    }\r\n"
+				+ "}");
+		CcpJsonRepresentation aggregations = getAggregations(resultAsPackage);
+		System.out.println(aggregations);
+	}
 
 }

@@ -19,6 +19,11 @@
 			<artifactId>ccp-commons</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
 		</dependency>
+		<dependency>
+			<groupId>com.ccp</groupId>
+			<artifactId>ccp-json-gson</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
 
 	</dependencies>
 

@@ -7,6 +7,7 @@ import java.util.function.Consumer;
 
 import com.ccp.constantes.CcpConstants;
 import com.ccp.decorators.CcpJsonRepresentation;
+import com.ccp.decorators.CcpTimeDecorator;
 import com.ccp.dependency.injection.CcpDependencyInjection;
 import com.ccp.especifications.db.query.CcpDbQueryOptions;
 import com.ccp.especifications.db.query.CcpQueryExecutor;
@@ -64,7 +65,7 @@ class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 			if(firstPage) {
 				String url = indexes + "/_search?size=" + size + "&scroll="+ scrollTime;
 				ResponseHandlerToConsumeSearch searchDataTransform = new ResponseHandlerToConsumeSearch();
-				CcpJsonRepresentation flows = CcpConstants.EMPTY_JSON.put("200", CcpConstants.DO_BY_PASS).put("404", CcpConstants.RETURNS_EMPTY_JSON);
+				CcpJsonRepresentation flows = CcpConstants.EMPTY_JSON.put("200", CcpConstants.DO_NOTHING).put("404", CcpConstants.RETURNS_EMPTY_JSON);
 				CcpJsonRepresentation executeHttpRequest = dbUtils.executeHttpRequest("consumeQueryResult", url, "POST", flows,  CcpConstants.EMPTY_JSON, CcpHttpResponseType.singleRecord);
 				CcpJsonRepresentation _package = searchDataTransform.apply(executeHttpRequest);
 				List<CcpJsonRepresentation> hits = _package.getAsJsonList("hits");
@@ -75,7 +76,7 @@ class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 				continue;
 			}
 			
-			CcpJsonRepresentation flows = CcpConstants.EMPTY_JSON.put("200", CcpConstants.DO_BY_PASS).put("404", CcpConstants.RETURNS_EMPTY_JSON);
+			CcpJsonRepresentation flows = CcpConstants.EMPTY_JSON.put("200", CcpConstants.DO_NOTHING).put("404", CcpConstants.RETURNS_EMPTY_JSON);
 			CcpJsonRepresentation scrollRequest = CcpConstants.EMPTY_JSON.put("scroll", scrollTime).put("scroll_id", scrollId);
 			
 			ResponseHandlerToSearch searchDataTransform = new ResponseHandlerToSearch();
@@ -215,7 +216,7 @@ class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 				+ "    }\r\n"
 				+ "}");
 		CcpJsonRepresentation aggregations = getAggregations(resultAsPackage);
-		System.out.println(aggregations);
+		CcpTimeDecorator.log(aggregations);
 	}
 
 }

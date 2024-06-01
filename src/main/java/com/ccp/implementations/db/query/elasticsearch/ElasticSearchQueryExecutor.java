@@ -48,10 +48,21 @@ class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 		
 		return executeHttpRequest;
 	}
-
 	
 	public void consumeQueryResult(CcpDbQueryOptions elasticQuery, String[] resourcesNames,
-			String scrollTime, int size, Consumer<CcpJsonRepresentation> consumer, String... fields) {
+			String scrollTime, Integer pageSize, Consumer<CcpJsonRepresentation> consumer, String... fields) {
+		
+		Consumer<List<CcpJsonRepresentation>> x = list -> {
+			for (CcpJsonRepresentation item : list) {
+				consumer.accept(item);
+			}
+		};
+		
+		this.consumeQueryResult(elasticQuery, resourcesNames, scrollTime, pageSize.longValue(), x, fields);
+	}	
+	
+	public void consumeQueryResult(CcpDbQueryOptions elasticQuery, String[] resourcesNames,
+			String scrollTime, Long pageSize, Consumer<List<CcpJsonRepresentation>> consumer, String... fields) {
 
 		long total = this.total(elasticQuery, resourcesNames);
 		String indexes = this.getIndexes(resourcesNames);
@@ -59,20 +70,18 @@ class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 		String scrollId = "";                  
 		CcpDbRequester dbUtils = CcpDependencyInjection.getDependency(CcpDbRequester.class);
 		
-		for(int k = 0; k <= total; k += size) {
+		for(int k = 0; k <= total; k += pageSize) {
 			boolean firstPage = k == 0;
 			
 			if(firstPage) {
-				String url = indexes + "/_search?size=" + size + "&scroll="+ scrollTime;
+				String url = indexes + "/_search?size=" + pageSize + "&scroll="+ scrollTime;
 				ResponseHandlerToConsumeSearch searchDataTransform = new ResponseHandlerToConsumeSearch();
 				CcpJsonRepresentation flows = CcpConstants.EMPTY_JSON.put("200", CcpConstants.DO_NOTHING).put("404", CcpConstants.RETURNS_EMPTY_JSON);
 				CcpJsonRepresentation executeHttpRequest = dbUtils.executeHttpRequest("consumeQueryResult", url, "POST", flows,  CcpConstants.EMPTY_JSON, CcpHttpResponseType.singleRecord);
 				CcpJsonRepresentation _package = searchDataTransform.apply(executeHttpRequest);
 				List<CcpJsonRepresentation> hits = _package.getAsJsonList("hits");
 				scrollId = _package.getAsString("_scroll_id");
-				for (CcpJsonRepresentation hit : hits) {
-					consumer.accept(hit);
-				}
+				consumer.accept(hits);
 				continue;
 			}
 			
@@ -82,9 +91,7 @@ class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 			ResponseHandlerToSearch searchDataTransform = new ResponseHandlerToSearch();
 			CcpJsonRepresentation executeHttpRequest = dbUtils.executeHttpRequest("consumeQueryResult", "/_search/scroll", "POST", flows,  scrollRequest, CcpHttpResponseType.singleRecord);
 			List<CcpJsonRepresentation> hits = searchDataTransform.apply(executeHttpRequest);
-			for (CcpJsonRepresentation hit : hits) {
-				consumer.accept(hit);
-			}
+			consumer.accept(hits);
 		}
 	}
 

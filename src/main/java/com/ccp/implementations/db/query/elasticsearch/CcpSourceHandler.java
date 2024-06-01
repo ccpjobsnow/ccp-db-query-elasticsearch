@@ -9,8 +9,9 @@ class CcpSourceHandler  implements Function<CcpJsonRepresentation, CcpJsonRepres
 	
 	public CcpJsonRepresentation apply(CcpJsonRepresentation x) {
 		CcpJsonRepresentation internalMap = x.getInnerJson("_source");
+		String entity = x.getAsString("_index");
 		String id = x.getAsString("_id");
-		CcpJsonRepresentation put = internalMap.put("id", id);
+		CcpJsonRepresentation put = internalMap.put("id", id).put("entity", entity);
 		return put;
 	}
 	

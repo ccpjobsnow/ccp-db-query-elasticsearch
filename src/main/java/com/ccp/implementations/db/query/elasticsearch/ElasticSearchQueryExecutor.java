@@ -76,7 +76,7 @@ class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 			if(firstPage) {
 				String url = indexes + "/_search?size=" + pageSize + "&scroll="+ scrollTime;
 				ResponseHandlerToConsumeSearch searchDataTransform = new ResponseHandlerToConsumeSearch();
-				CcpJsonRepresentation flows = CcpConstants.EMPTY_JSON.put("200", CcpConstants.DO_NOTHING).put("404", CcpConstants.RETURNS_EMPTY_JSON);
+				CcpJsonRepresentation flows = CcpConstants.EMPTY_JSON.addJsonTransformer("200", CcpConstants.DO_NOTHING).addJsonTransformer("404", CcpConstants.RETURNS_EMPTY_JSON);
 				CcpJsonRepresentation executeHttpRequest = dbUtils.executeHttpRequest("consumeQueryResult", url, "POST", flows,  CcpConstants.EMPTY_JSON, CcpHttpResponseType.singleRecord);
 				CcpJsonRepresentation _package = searchDataTransform.apply(executeHttpRequest);
 				List<CcpJsonRepresentation> hits = _package.getAsJsonList("hits");
@@ -85,7 +85,7 @@ class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 				continue;
 			}
 			
-			CcpJsonRepresentation flows = CcpConstants.EMPTY_JSON.put("200", CcpConstants.DO_NOTHING).put("404", CcpConstants.RETURNS_EMPTY_JSON);
+			CcpJsonRepresentation flows = CcpConstants.EMPTY_JSON.addJsonTransformer("200", CcpConstants.DO_NOTHING).addJsonTransformer("404", CcpConstants.RETURNS_EMPTY_JSON);
 			CcpJsonRepresentation scrollRequest = CcpConstants.EMPTY_JSON.put("scroll", scrollTime).put("scroll_id", scrollId);
 			
 			ResponseHandlerToSearch searchDataTransform = new ResponseHandlerToSearch();
@@ -165,19 +165,19 @@ class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 	public static CcpJsonRepresentation getAggregations(CcpJsonRepresentation resultAsPackage) {
 		CcpJsonRepresentation innerJson = resultAsPackage.getInnerJson("total");
 		CcpJsonRepresentation result = CcpConstants.EMPTY_JSON;
-		boolean containsAllKeys = innerJson.containsAllKeys("value");
+		boolean containsAllKeys = innerJson.containsAllFields("value");
 		if(containsAllKeys) {
 			Double total = innerJson.getAsDoubleNumber("value");
 			result = result.put("total", total);			
 		}
 		CcpJsonRepresentation aggregations = resultAsPackage.getInnerJson("aggregations");
-		Set<String> allAggregations = aggregations.keySet();
+		Set<String> allAggregations = aggregations.fieldSet();
 		
 		for (String aggregationName : allAggregations) {
 			
 			CcpJsonRepresentation value = aggregations.getInnerJson(aggregationName);
 			
-			boolean ignore = value.containsKey("buckets") == false;
+			boolean ignore = value.containsField("buckets") == false;
 			
 			if(ignore) {
 				Double asDoubleNumber = value.getAsDoubleNumber("value");

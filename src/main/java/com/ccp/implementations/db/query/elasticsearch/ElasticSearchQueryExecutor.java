@@ -77,7 +77,7 @@ class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 				String url = indexes + "/_search?size=" + pageSize + "&scroll="+ scrollTime;
 				ResponseHandlerToConsumeSearch searchDataTransform = new ResponseHandlerToConsumeSearch();
 				CcpJsonRepresentation flows = CcpConstants.EMPTY_JSON.addJsonTransformer("200", CcpConstants.DO_NOTHING).addJsonTransformer("404", CcpConstants.RETURNS_EMPTY_JSON);
-				CcpJsonRepresentation executeHttpRequest = dbUtils.executeHttpRequest("consumeQueryResult", url, "POST", flows,  CcpConstants.EMPTY_JSON, CcpHttpResponseType.singleRecord);
+				CcpJsonRepresentation executeHttpRequest = dbUtils.executeHttpRequest("consumeQueryResult", url, "POST", flows,  elasticQuery.json, CcpHttpResponseType.singleRecord);
 				CcpJsonRepresentation _package = searchDataTransform.apply(executeHttpRequest);
 				List<CcpJsonRepresentation> hits = _package.getAsJsonList("hits");
 				scrollId = _package.getAsString("_scroll_id");
@@ -100,7 +100,7 @@ class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 		CcpDbRequester dbUtils = CcpDependencyInjection.getDependency(CcpDbRequester.class);
 		String indexes = this.getIndexes(resourcesNames);
 		String url = indexes + "/_count";
-		CcpJsonRepresentation executeHttpRequest = dbUtils.executeHttpRequest("getTotalRecords", url, "GET", 200, elasticQuery.json, CcpHttpResponseType.singleRecord);
+		CcpJsonRepresentation executeHttpRequest = dbUtils.executeHttpRequest("getTotalRecords", url, "POST", 200, elasticQuery.json, CcpHttpResponseType.singleRecord);
 		Long count = executeHttpRequest.getAsLongNumber("count");
 		return count;
 	}

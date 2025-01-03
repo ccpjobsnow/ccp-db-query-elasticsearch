@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 
-import com.ccp.constantes.CcpConstants;
+import com.ccp.constantes.CcpOtherConstants;
 import com.ccp.decorators.CcpJsonRepresentation;
 import com.ccp.decorators.CcpTimeDecorator;
 import com.ccp.dependency.injection.CcpDependencyInjection;
@@ -20,7 +20,7 @@ class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 
 	
 	public CcpJsonRepresentation getTermsStatis(CcpDbQueryOptions elasticQuery, String[] resourcesNames, String fieldName) {
-		CcpJsonRepresentation md = CcpConstants.EMPTY_JSON;
+		CcpJsonRepresentation md = CcpOtherConstants.EMPTY_JSON;
 		CcpJsonRepresentation aggregations = this.getAggregations(elasticQuery, resourcesNames);
 		
 		List<CcpJsonRepresentation> asMapList = aggregations.getAsJsonList(fieldName);
@@ -76,7 +76,7 @@ class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 			if(firstPage) {
 				String url = indexes + "/_search?size=" + pageSize + "&scroll="+ scrollTime;
 				ResponseHandlerToConsumeSearch searchDataTransform = new ResponseHandlerToConsumeSearch();
-				CcpJsonRepresentation flows = CcpConstants.EMPTY_JSON.addJsonTransformer("200", CcpConstants.DO_NOTHING).addJsonTransformer("404", CcpConstants.RETURNS_EMPTY_JSON);
+				CcpJsonRepresentation flows = CcpOtherConstants.EMPTY_JSON.addJsonTransformer("200", CcpOtherConstants.DO_NOTHING).addJsonTransformer("404", CcpOtherConstants.RETURNS_EMPTY_JSON);
 				CcpJsonRepresentation executeHttpRequest = dbUtils.executeHttpRequest("consumeQueryResult", url, "POST", flows,  elasticQuery.json, CcpHttpResponseType.singleRecord);
 				CcpJsonRepresentation _package = searchDataTransform.apply(executeHttpRequest);
 				List<CcpJsonRepresentation> hits = _package.getAsJsonList("hits");
@@ -85,8 +85,8 @@ class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 				continue;
 			}
 			
-			CcpJsonRepresentation flows = CcpConstants.EMPTY_JSON.addJsonTransformer("200", CcpConstants.DO_NOTHING).addJsonTransformer("404", CcpConstants.RETURNS_EMPTY_JSON);
-			CcpJsonRepresentation scrollRequest = CcpConstants.EMPTY_JSON.put("scroll", scrollTime).put("scroll_id", scrollId);
+			CcpJsonRepresentation flows = CcpOtherConstants.EMPTY_JSON.addJsonTransformer("200", CcpOtherConstants.DO_NOTHING).addJsonTransformer("404", CcpOtherConstants.RETURNS_EMPTY_JSON);
+			CcpJsonRepresentation scrollRequest = CcpOtherConstants.EMPTY_JSON.put("scroll", scrollTime).put("scroll_id", scrollId);
 			
 			ResponseHandlerToSearch searchDataTransform = new ResponseHandlerToSearch();
 			CcpJsonRepresentation executeHttpRequest = dbUtils.executeHttpRequest("consumeQueryResult", "/_search/scroll", "POST", flows,  scrollRequest, CcpHttpResponseType.singleRecord);
@@ -122,7 +122,7 @@ class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 	
 	public CcpJsonRepresentation getResultAsMap(CcpDbQueryOptions elasticQuery, String[] resourcesNames, String field) {
 		List<CcpJsonRepresentation> resultAsList = this.getResultAsList(elasticQuery, resourcesNames, field);
-		CcpJsonRepresentation result = CcpConstants.EMPTY_JSON;
+		CcpJsonRepresentation result = CcpOtherConstants.EMPTY_JSON;
 		for (CcpJsonRepresentation md : resultAsList) {
 			String id = md.getAsString("_id");
 			Object value = md.get(field);
@@ -144,7 +144,7 @@ class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 	public CcpJsonRepresentation getMap(CcpDbQueryOptions elasticQuery, String[] resourcesNames, String field) {
 		CcpJsonRepresentation aggregations = this.getAggregations(elasticQuery, resourcesNames);
 		List<CcpJsonRepresentation> asMapList = aggregations.getAsJsonList(field);
-		CcpJsonRepresentation retorno = CcpConstants.EMPTY_JSON;
+		CcpJsonRepresentation retorno = CcpOtherConstants.EMPTY_JSON;
 		for (CcpJsonRepresentation md : asMapList) {
 			Object value = md.get("value");
 			String key = md.getAsString("key");
@@ -164,7 +164,7 @@ class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 
 	public static CcpJsonRepresentation getAggregations(CcpJsonRepresentation resultAsPackage) {
 		CcpJsonRepresentation innerJson = resultAsPackage.getInnerJson("total");
-		CcpJsonRepresentation result = CcpConstants.EMPTY_JSON;
+		CcpJsonRepresentation result = CcpOtherConstants.EMPTY_JSON;
 		boolean containsAllKeys = innerJson.containsAllFields("value");
 		if(containsAllKeys) {
 			Double total = innerJson.getAsDoubleNumber("value");

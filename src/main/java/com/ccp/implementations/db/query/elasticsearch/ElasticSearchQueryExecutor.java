@@ -7,13 +7,11 @@ import java.util.function.Consumer;
 
 import com.ccp.constantes.CcpOtherConstants;
 import com.ccp.decorators.CcpJsonRepresentation;
-import com.ccp.decorators.CcpTimeDecorator;
 import com.ccp.dependency.injection.CcpDependencyInjection;
 import com.ccp.especifications.db.query.CcpDbQueryOptions;
 import com.ccp.especifications.db.query.CcpQueryExecutor;
 import com.ccp.especifications.db.utils.CcpDbRequester;
 import com.ccp.especifications.http.CcpHttpResponseType;
-import com.ccp.implementations.json.gson.CcpGsonJsonHandler;
 
 class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 	
@@ -49,7 +47,7 @@ class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 		return executeHttpRequest;
 	}
 	
-	public void consumeQueryResult(CcpDbQueryOptions elasticQuery, String[] resourcesNames,
+	public CcpQueryExecutor consumeQueryResult(CcpDbQueryOptions elasticQuery, String[] resourcesNames,
 			String scrollTime, Integer pageSize, Consumer<CcpJsonRepresentation> consumer, String... fields) {
 		
 		Consumer<List<CcpJsonRepresentation>> x = list -> {
@@ -58,10 +56,11 @@ class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 			}
 		};
 		
-		this.consumeQueryResult(elasticQuery, resourcesNames, scrollTime, pageSize.longValue(), x, fields);
+		CcpQueryExecutor consumeQueryResult = this.consumeQueryResult(elasticQuery, resourcesNames, scrollTime, pageSize.longValue(), x, fields);
+		return consumeQueryResult;
 	}	
 	
-	public void consumeQueryResult(CcpDbQueryOptions elasticQuery, String[] resourcesNames,
+	public CcpQueryExecutor consumeQueryResult(CcpDbQueryOptions elasticQuery, String[] resourcesNames,
 			String scrollTime, Long pageSize, Consumer<List<CcpJsonRepresentation>> consumer, String... fields) {
 
 		long total = this.total(elasticQuery, resourcesNames);
@@ -93,6 +92,7 @@ class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 			List<CcpJsonRepresentation> hits = searchDataTransform.apply(executeHttpRequest);
 			consumer.accept(hits);
 		}
+		return this;
 	}
 
 	
@@ -195,35 +195,5 @@ class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 		return result;
 	}
 
-	public static void main(String[] args) {
-		CcpDependencyInjection.loadAllDependencies(new CcpGsonJsonHandler());
-		CcpJsonRepresentation resultAsPackage = new CcpJsonRepresentation("{\r\n"
-				+ "    \"aggregations\": {\r\n"
-				+ "        \"my-agg-name\": {\r\n"
-				+ "            \"doc_count_error_upper_bound\": 0,\r\n"
-				+ "            \"sum_other_doc_count\": 0,\r\n"
-				+ "            \"buckets\": [\r\n"
-				+ "                {\r\n"
-				+ "                    \"key\": \"foo\",\r\n"
-				+ "                    \"doc_count\": 5,\r\n"
-				+ "                    \"my-sub-agg-name\": {\r\n"
-				+ "                        \"value\": 75\r\n"
-				+ "                    }\r\n"
-				+ "                },\r\n"
-				+ "               {\r\n"
-				+ "                    \"key\": \"foo2\",\r\n"
-				+ "                    \"doc_count\": 5,\r\n"
-				+ "                    \"my-sub-agg-name\": {\r\n"
-				+ "                        \"value\": 75\r\n"
-				+ "                    }\r\n"
-				+ "                }\r\n"
-				+ "				\r\n"
-				+ "            ]\r\n"
-				+ "        }\r\n"
-				+ "    }\r\n"
-				+ "}");
-		CcpJsonRepresentation aggregations = getAggregations(resultAsPackage);
-		CcpTimeDecorator.log(aggregations);
-	}
 
 }

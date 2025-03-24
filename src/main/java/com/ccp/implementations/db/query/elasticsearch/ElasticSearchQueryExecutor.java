@@ -12,6 +12,7 @@ import com.ccp.especifications.db.query.CcpDbQueryOptions;
 import com.ccp.especifications.db.query.CcpQueryExecutor;
 import com.ccp.especifications.db.utils.CcpDbRequester;
 import com.ccp.especifications.http.CcpHttpResponseType;
+import com.ccp.http.CcpHttpMethods;
 
 class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 	
@@ -33,7 +34,7 @@ class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 	public CcpJsonRepresentation delete(CcpDbQueryOptions elasticQuery, String[] resourcesNames) {
 		CcpDbRequester dbUtils = CcpDependencyInjection.getDependency(CcpDbRequester.class);
 		
-		CcpJsonRepresentation executeHttpRequest = dbUtils.executeHttpRequest("delete", "/_delete_by_query", "POST", 200, elasticQuery.json,  resourcesNames, CcpHttpResponseType.singleRecord);
+		CcpJsonRepresentation executeHttpRequest = dbUtils.executeHttpRequest("delete", "/_delete_by_query", CcpHttpMethods.POST, 200, elasticQuery.json,  resourcesNames, CcpHttpResponseType.singleRecord);
 
 		return executeHttpRequest;
 	}
@@ -42,7 +43,7 @@ class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 	public CcpJsonRepresentation update(CcpDbQueryOptions elasticQuery, String[] resourcesNames, CcpJsonRepresentation newValues) {
 		CcpDbRequester dbUtils = CcpDependencyInjection.getDependency(CcpDbRequester.class);
 		
-		CcpJsonRepresentation executeHttpRequest = dbUtils.executeHttpRequest("update", "/_update_by_query", "POST", 200, elasticQuery.json,  resourcesNames, CcpHttpResponseType.singleRecord);
+		CcpJsonRepresentation executeHttpRequest = dbUtils.executeHttpRequest("update", "/_update_by_query", CcpHttpMethods.POST, 200, elasticQuery.json,  resourcesNames, CcpHttpResponseType.singleRecord);
 		
 		return executeHttpRequest;
 	}
@@ -76,7 +77,7 @@ class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 				String url = indexes + "/_search?size=" + pageSize + "&scroll="+ scrollTime;
 				ResponseHandlerToConsumeSearch searchDataTransform = new ResponseHandlerToConsumeSearch();
 				CcpJsonRepresentation flows = CcpOtherConstants.EMPTY_JSON.addJsonTransformer("200", CcpOtherConstants.DO_NOTHING).addJsonTransformer("404", CcpOtherConstants.RETURNS_EMPTY_JSON);
-				CcpJsonRepresentation executeHttpRequest = dbUtils.executeHttpRequest("consumeQueryResult", url, "POST", flows,  elasticQuery.json, CcpHttpResponseType.singleRecord);
+				CcpJsonRepresentation executeHttpRequest = dbUtils.executeHttpRequest("consumeQueryResult", url, CcpHttpMethods.POST, flows,  elasticQuery.json, CcpHttpResponseType.singleRecord);
 				CcpJsonRepresentation _package = searchDataTransform.apply(executeHttpRequest);
 				List<CcpJsonRepresentation> hits = _package.getAsJsonList("hits");
 				scrollId = _package.getAsString("_scroll_id");
@@ -88,7 +89,7 @@ class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 			CcpJsonRepresentation scrollRequest = CcpOtherConstants.EMPTY_JSON.put("scroll", scrollTime).put("scroll_id", scrollId);
 			
 			ResponseHandlerToSearch searchDataTransform = new ResponseHandlerToSearch();
-			CcpJsonRepresentation executeHttpRequest = dbUtils.executeHttpRequest("consumeQueryResult", "/_search/scroll", "POST", flows,  scrollRequest, CcpHttpResponseType.singleRecord);
+			CcpJsonRepresentation executeHttpRequest = dbUtils.executeHttpRequest("consumeQueryResult", "/_search/scroll", CcpHttpMethods.POST, flows,  scrollRequest, CcpHttpResponseType.singleRecord);
 			List<CcpJsonRepresentation> hits = searchDataTransform.apply(executeHttpRequest);
 			consumer.accept(hits);
 		}
@@ -100,7 +101,7 @@ class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 		CcpDbRequester dbUtils = CcpDependencyInjection.getDependency(CcpDbRequester.class);
 		String indexes = this.getIndexes(resourcesNames);
 		String url = indexes + "/_count";
-		CcpJsonRepresentation executeHttpRequest = dbUtils.executeHttpRequest("getTotalRecords", url, "POST", 200, elasticQuery.json, CcpHttpResponseType.singleRecord);
+		CcpJsonRepresentation executeHttpRequest = dbUtils.executeHttpRequest("getTotalRecords", url, CcpHttpMethods.POST, 200, elasticQuery.json, CcpHttpResponseType.singleRecord);
 		Long count = executeHttpRequest.getAsLongNumber("count");
 		return count;
 	}
@@ -112,7 +113,7 @@ class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 
 	
 	public List<CcpJsonRepresentation> getResultAsList(CcpDbQueryOptions elasticQuery, String[] resourcesNames, String... fieldsToSearch) {
-		CcpJsonRepresentation executeHttpRequest = this.getResultAsPackage("/_search", "POST", 200, elasticQuery, resourcesNames, fieldsToSearch);
+		CcpJsonRepresentation executeHttpRequest = this.getResultAsPackage("/_search", CcpHttpMethods.POST, 200, elasticQuery, resourcesNames, fieldsToSearch);
 		
 		ResponseHandlerToSearch searchDataTransform = new ResponseHandlerToSearch();
 		List<CcpJsonRepresentation> hits = searchDataTransform.apply(executeHttpRequest);
@@ -132,7 +133,7 @@ class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 	}
 
 	
-	public CcpJsonRepresentation getResultAsPackage(String url, String method, int expectedStatus, CcpDbQueryOptions elasticQuery, String[] resourcesNames, String... fieldsToSearch) {
+	public CcpJsonRepresentation getResultAsPackage(String url, CcpHttpMethods method, int expectedStatus, CcpDbQueryOptions elasticQuery, String[] resourcesNames, String... fieldsToSearch) {
 		CcpJsonRepresentation _source = elasticQuery.json.put("_source", Arrays.asList(fieldsToSearch));
 		CcpDbRequester dbUtils = CcpDependencyInjection.getDependency(CcpDbRequester.class);
 		
@@ -156,7 +157,7 @@ class ElasticSearchQueryExecutor implements CcpQueryExecutor {
 	
 	public CcpJsonRepresentation getAggregations(CcpDbQueryOptions elasticQuery, String... resourcesNames) {
 		
-		CcpJsonRepresentation resultAsPackage = this.getResultAsPackage("/_search", "POST", 200, elasticQuery, resourcesNames);
+		CcpJsonRepresentation resultAsPackage = this.getResultAsPackage("/_search", CcpHttpMethods.POST, 200, elasticQuery, resourcesNames);
 		CcpJsonRepresentation result = getAggregations(resultAsPackage);
 		
 		return result;
